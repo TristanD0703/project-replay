@@ -3,6 +3,21 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
+@font-face {
+  font-family: "DFPT";
+  src: url("/fonts/DFPT_ZY9.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "BlitzBold";
+  src: url("/fonts/BlitzBold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "BlitzMain";
+  src: url("/fonts/BlitzMain.otf") format("opentype");
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -125,5 +140,19 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .font-dfpt {
+    font-family: "DFPT", sans-serif;
+  }
+
+  .font-blitz-bold {
+    font-family: "BlitzBold", sans-serif;
+  }
+
+  .font-blitz-main {
+    font-family: "BlitzMain", sans-serif;
   }
 }

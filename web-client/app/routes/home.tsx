@@ -14,7 +14,7 @@ export default function Home() {
       />
       <div className="fixed inset-[1%] z-[5] overflow-hidden rounded-3xl">
         <div className="flex h-[60px] w-full items-center justify-between bg-[#252525] px-[31px]">
-          <span className="ml-[3px] block text-[1.5rem] font-bold leading-[0.9] tracking-[-0.04em] text-white">
+          <span className="font-dfpt ml-[3px] block text-[1.5rem] leading-[0.9] tracking-[-0.04em] text-white">
             Project Replay
           </span>
 
@@ -36,10 +36,16 @@ export default function Home() {
       </div>
       <div className="fixed inset-[1%] z-20 flex items-center justify-center p-6">
         <div className="flex w-full max-w-xl flex-col items-center text-center">
-          <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
-            Share your replays.
+          <h1 className="font-blitz-bold flex items-center justify-center gap-3 whitespace-nowrap text-4xl tracking-[-0.04em] text-white sm:text-5xl">
+            <span>Share your</span>
+            <img
+              alt="Splatoon 3"
+              className="h-[3em] w-auto shrink-0 object-contain"
+              src="/S3_logo.png"
+            />
+            <span>replays.</span>
           </h1>
-          <p className="mt-2 text-lg font-semibold text-white/80 sm:text-2xl">
+          <p className="font-blitz-main mt-2 text-lg text-white/80 sm:text-2xl">
             No capture card required.
           </p>
 
