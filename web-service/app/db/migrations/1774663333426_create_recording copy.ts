@@ -9,6 +9,9 @@ export async function up(db: Kysely<any>): Promise<void> {
         .createTable('recording_status')
         .addColumn('id', 'uuid', (col) => col.primaryKey())
         .addColumn('status', 'text', (col) => col.notNull().defaultTo('QUEUED'))
+        .addColumn('is_public', 'boolean', (col) =>
+            col.notNull().defaultTo(false),
+        )
         .addColumn('created_by_id', 'uuid', (col) =>
             col.notNull().references('user.id'),
         )

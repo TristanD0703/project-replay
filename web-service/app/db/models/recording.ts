@@ -14,6 +14,7 @@ export interface RecordingStatusModel {
     id: string;
     created_by_id: string;
     status: 'QUEUED' | 'RECORDING' | 'READY' | 'FAILED';
+    is_public: boolean;
     created_at: ColumnType<Date, string | undefined, never>;
     updated_at: ColumnType<Date, string | undefined, never>;
 }
