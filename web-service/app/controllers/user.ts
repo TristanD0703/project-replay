@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
-import AppError from '../../app-error';
-import { createUserSchema } from '../../db/models/user';
-import UserService from '../../services/user';
+import AppError from '../app-error';
+import { createUserSchema } from '../db/models/user';
+import UserService from '../services/user';
 
 export default class UserController {
     static async createUser(req: Request, res: Response) {
         const user = createUserSchema.parse(req.body);
         const dbRes = await UserService.createUser(user);
 
-        console.log(dbRes);
         res.status(201).json(dbRes);
     }
 

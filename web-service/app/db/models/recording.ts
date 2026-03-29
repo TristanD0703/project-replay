@@ -42,6 +42,7 @@ export const recordingMetadataSchema = z
     .object({
         id: z.uuid(),
         created_by_id: z.uuid(),
+        replay_code: z.string().min(1),
         status: recordingStatusValueSchema,
         is_public: z.boolean(),
         created_at: recordingDateSchema,
@@ -61,7 +62,9 @@ export const createRecordingMetadataSchema = recordingMetadataSchema
     });
 
 export const updateRecordingStatusSchema =
-    createRecordingMetadataSchema.partial();
+    createRecordingMetadataSchema.partial().extend({
+        id: z.uuid(),
+    });
 
 type VideoSchema = z.infer<typeof videoSchema>;
 type RecordingMetadataSchema = z.infer<typeof recordingMetadataSchema>;
@@ -94,7 +97,7 @@ export interface RecordingMetadataModel extends Omit<
     updated_at: ColumnType<
         RecordingMetadataSchema['updated_at'],
         string | undefined,
-        never
+        RecordingMetadataSchema['updated_at'] | string | undefined
     >;
 }
 
