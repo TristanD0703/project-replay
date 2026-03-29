@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import AppError from '../../app-error';
 import { createUserSchema } from '../../db/models/user';
 import UserService from '../../services/user';
 
@@ -19,8 +20,8 @@ export default class UserController {
         try {
             const dbRes = await UserService.getUserById(id);
             res.json(dbRes);
-        } catch (e: any) {
-            res.sendStatus(404);
+        } catch {
+            throw new AppError(404, 'User not found');
         }
     }
 
@@ -28,10 +29,7 @@ export default class UserController {
         const name = req.query.name;
 
         if (typeof name !== 'string') {
-            res.status(400).json({
-                message: 'Query parameter Name is required',
-            });
-            return;
+            throw new AppError(400, 'Query parameter Name is required');
         }
 
         const dbRes = await UserService.getUserByName(name);
@@ -46,10 +44,8 @@ export default class UserController {
 
         try {
             await UserService.deleteUser(id);
-        } catch (e: any) {
-            res.sendStatus(404);
-
-            return;
+        } catch {
+            throw new AppError(404, 'User not found');
         }
 
         res.sendStatus(200);
