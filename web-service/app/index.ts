@@ -1,20 +1,13 @@
 import Express from 'express';
 import DatabaseConnection from './db';
+import UserController from './controllers/user/user';
 
 DatabaseConnection.connect();
 
 const app = Express();
-app.get('/hello', async (req, res) => {
-    const conn = DatabaseConnection.getConnection();
-    const resp = await conn.selectFrom('user').selectAll().execute();
-    console.log(resp);
-    res.send('Hello world!');
-});
+app.use(Express.json());
 
-app.get('/goodbye', (req, res) => {
-    res.send('Goodbye world!');
-});
-
+UserController.registerRoutes(app);
 app.listen(8080, () => {
-    console.log(`Example app listening on port 3000`);
+    console.log(`Example app listening on port 8080`);
 });

@@ -10,6 +10,7 @@ export async function up(db: Kysely<any>): Promise<void> {
         .addColumn('id', 'uuid', (col) => col.primaryKey())
         .addColumn('discord_id', 'text', (col) => col.notNull())
         .addColumn('discord_username', 'text', (col) => col.notNull())
+        .addColumn('discord_avatar_hash', 'text')
         .addColumn('is_streamer', 'boolean', (col) =>
             col.notNull().defaultTo(false),
         )
