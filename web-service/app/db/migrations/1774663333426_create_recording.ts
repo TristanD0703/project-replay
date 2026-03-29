@@ -6,9 +6,10 @@ export async function up(db: Kysely<any>): Promise<void> {
     // For more info, see: https://kysely.dev/docs/migrations
 
     await db.schema
-        .createTable('recording_status')
+        .createTable('recording_metadata')
         .addColumn('id', 'uuid', (col) => col.primaryKey())
         .addColumn('status', 'text', (col) => col.notNull().defaultTo('QUEUED'))
+        .addColumn('replay_code', 'text', (col) => col.notNull())
         .addColumn('is_public', 'boolean', (col) =>
             col.notNull().defaultTo(false),
         )
@@ -24,11 +25,11 @@ export async function up(db: Kysely<any>): Promise<void> {
         .execute();
 
     await db.schema
-        .createTable('recording')
+        .createTable('video')
         .addColumn('id', 'uuid', (col) =>
             col
                 .primaryKey()
-                .references('recording_status.id')
+                .references('recording_metadata.id')
                 .onDelete('cascade'),
         )
         .addColumn('thumbnail_link', 'text', (col) => col.notNull())
@@ -46,26 +47,26 @@ export async function up(db: Kysely<any>): Promise<void> {
         .execute();
 
     await db.schema
-        .createIndex('status_id_index')
-        .on('recording_status')
+        .createIndex('metadata_id_index')
+        .on('recording_metadata')
         .column('id')
         .execute();
 
     await db.schema
-        .createIndex('status_created_by_index')
-        .on('recording_status')
+        .createIndex('metadata_created_by_index')
+        .on('recording_metadata')
         .column('created_by_id')
         .execute();
 
     await db.schema
-        .createIndex('recording_id_index')
-        .on('recording')
+        .createIndex('video_id_index')
+        .on('video')
         .column('id')
         .execute();
 
     await db.schema
-        .createIndex('recording_name_index')
-        .on('recording')
+        .createIndex('video_name_index')
+        .on('video')
         .column('name')
         .execute();
 }

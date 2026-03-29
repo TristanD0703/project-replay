@@ -9,7 +9,10 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/index.js",
-        "start:dev": "ts-node-dev --respawn --transpile-only app/index.ts"
+        "start:dev": "ts-node-dev --respawn --transpile-only app/index.ts",
+        "db:setup": "kysely migrate:latest",
+        "db:reset": "kysely migrate:rollback --all",
+        "db:rebuild": "npm run db:reset && npm run db:setup"
     },
     "devDependencies": {
         "@types/express": "^5.0.6",
