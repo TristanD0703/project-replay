@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import AppError from '../app-error';
+import AppError from '../utils/app-error';
 import {
     createRecordingMetadataSchema,
     updateRecordingStatusSchema,

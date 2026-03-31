@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { CreateUserInput } from '../db/models/user';
 import DatabaseConnection from '../db';
-import AppError from '../app-error';
+import AppError from '../utils/app-error';
 
 export default class UserService {
     static async createUser(user: CreateUserInput) {

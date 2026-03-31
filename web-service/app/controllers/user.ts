@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import AppError from '../app-error';
+import AppError from '../utils/app-error';
 import { createUserSchema } from '../db/models/user';
 import UserService from '../services/user';
-import { asyncHandler } from '../async-handler';
+import { asyncHandler } from '../utils/async-handler';
 
 // TODO: Solidify all with authentication
 export default class UserController {
@@ -19,12 +19,8 @@ export default class UserController {
             ? req.params.userId[0]
             : req.params.userId;
 
-        try {
-            const dbRes = await UserService.getUserById(id);
-            res.json(dbRes);
-        } catch {
-            throw new AppError(404, 'User not found');
-        }
+        const dbRes = await UserService.getUserById(id);
+        res.json(dbRes);
     }
 
     static async getUserByName(req: Request, res: Response) {

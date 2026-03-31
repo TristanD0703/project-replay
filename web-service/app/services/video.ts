@@ -6,7 +6,7 @@ import {
     RecordingMetadataUpdate,
     UpdateRecordingMetadataInput,
 } from '../db/models/recording';
-import AppError from '../app-error';
+import AppError from '../utils/app-error';
 
 export default class VideoService {
     static async queueRecording(
@@ -16,17 +16,22 @@ export default class VideoService {
         const conn = DatabaseConnection.getConnection();
         const id = randomUUID();
 
-        const ret = await conn
-            .insertInto('recording_metadata')
-            .values({
-                ...metadata,
-                created_by_id: userId,
-                id,
-            })
-            .returningAll()
-            .executeTakeFirst();
+        try {
+            const ret = await conn
+                .insertInto('recording_metadata')
+                .values({
+                    ...metadata,
+                    created_by_id: userId,
+                    id,
+                })
+                .returningAll()
+                .executeTakeFirst();
+            return ret;
+        } catch (e: any) {
+            console.log(e.constructor.name);
+        }
 
-        return ret;
+        //TODO: Create a queue item to record this replay code
     }
 
     static async getVideosByUserId(id: string, skip: number, count: number) {

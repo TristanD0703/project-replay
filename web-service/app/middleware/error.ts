@@ -1,6 +1,7 @@
 import { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
-import AppError from '../app-error';
+import AppError from '../utils/app-error';
+import { NoResultError } from 'kysely';
 
 type JsonSyntaxError = SyntaxError & {
     status?: number;
@@ -39,7 +40,10 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
         return;
     }
 
-    if (err instanceof Error && err.message === 'Not found') {
+    if (
+        (err instanceof Error && err.message === 'Not found') ||
+        err instanceof NoResultError
+    ) {
         res.status(404).json({
             message: 'Resource not found',
         });
