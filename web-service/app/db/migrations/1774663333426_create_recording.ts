@@ -16,10 +16,10 @@ export async function up(db: Kysely<any>): Promise<void> {
         .addColumn('created_by_id', 'uuid', (col) =>
             col.notNull().references('user.id'),
         )
-        .addColumn('updated_at', 'date', (col) =>
+        .addColumn('updated_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
-        .addColumn('created_at', 'date', (col) =>
+        .addColumn('created_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
         .execute();
@@ -38,10 +38,10 @@ export async function up(db: Kysely<any>): Promise<void> {
         .addColumn('recorded_by', 'uuid', (col) =>
             col.notNull().references('user.id'),
         )
-        .addColumn('created_at', 'date', (col) =>
+        .addColumn('created_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
-        .addColumn('updated_at', 'date', (col) =>
+        .addColumn('updated_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
         .execute();
@@ -76,6 +76,6 @@ export async function down(db: Kysely<any>): Promise<void> {
     // down migration code goes here...
     // note: down migrations are optional. you can safely delete this function.
     // For more info, see: https://kysely.dev/docs/migrations
-    await db.schema.dropTable('recording').execute();
-    await db.schema.dropTable('recording_status').execute();
+    await db.schema.dropTable('video').execute();
+    await db.schema.dropTable('recording_metadata').execute();
 }

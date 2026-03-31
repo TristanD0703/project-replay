@@ -9,7 +9,10 @@ import {
 import AppError from '../app-error';
 
 export default class VideoService {
-    static async queueRecording(metadata: CreateRecordingMetadataInput) {
+    static async queueRecording(
+        metadata: CreateRecordingMetadataInput,
+        userId: string,
+    ) {
         const conn = DatabaseConnection.getConnection();
         const id = randomUUID();
 
@@ -17,6 +20,7 @@ export default class VideoService {
             .insertInto('recording_metadata')
             .values({
                 ...metadata,
+                created_by_id: userId,
                 id,
             })
             .returningAll()

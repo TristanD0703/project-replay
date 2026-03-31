@@ -9,14 +9,20 @@ import AuthService from '../services/auth';
 
 export default class VideoController {
     static async queueRecording(req: Request, res: Response) {
+        // TODO: Unjankify with real auth
+        const user = await AuthService.getUserFromRequest(req);
+        delete req.body.user;
+
         const metadata = createRecordingMetadataSchema.parse(req.body);
-        const dbRes = await VideoService.queueRecording(metadata);
+        const dbRes = await VideoService.queueRecording(metadata, user.id);
 
         res.status(201).json(dbRes);
     }
 
     static async getVideosByUserId(req: Request, res: Response) {
-        const [userId] = req.params.id;
+        const userId = Array.isArray(req.params.id)
+            ? req.params.id[0]
+            : req.params.id;
 
         const skipParam = Array.isArray(req.query.skip)
             ? req.query.skip[0]

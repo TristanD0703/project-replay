@@ -8,7 +8,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     await db.schema
         .createTable('user')
         .addColumn('id', 'uuid', (col) => col.primaryKey())
-        .addColumn('discord_id', 'text', (col) => col.notNull())
+        .addColumn('discord_id', 'text', (col) => col.notNull().unique())
         .addColumn('discord_username', 'text', (col) => col.notNull())
         .addColumn('discord_avatar_hash', 'text')
         .addColumn('is_streamer', 'boolean', (col) =>
@@ -18,10 +18,10 @@ export async function up(db: Kysely<any>): Promise<void> {
             col.notNull().defaultTo(false),
         )
         .addColumn('stream_key', 'text')
-        .addColumn('updated_at', 'date', (col) =>
+        .addColumn('updated_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
-        .addColumn('created_at', 'date', (col) =>
+        .addColumn('created_at', 'timestamp', (col) =>
             col.notNull().defaultTo(sql`now()`),
         )
         .execute();

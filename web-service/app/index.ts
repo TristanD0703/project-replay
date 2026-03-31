@@ -8,12 +8,14 @@ import VideoController from './controllers/video';
 DatabaseConnection.connect();
 
 const app = Express();
-app.use(loggingMiddleware);
-app.use(errorMiddleware);
+
 app.use(Express.json());
+app.use(loggingMiddleware);
 
 UserController.registerRoutes(app);
 VideoController.registerRoutes(app);
+
+app.use(errorMiddleware); // This order is intentional as errors occur last in the request pipeline
 
 app.listen(8080, () => {
     console.log(`Example app listening on port 8080`);

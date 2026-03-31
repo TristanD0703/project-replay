@@ -2,12 +2,19 @@ import { randomUUID } from 'crypto';
 
 import { CreateUserInput } from '../db/models/user';
 import DatabaseConnection from '../db';
+import AppError from '../app-error';
 
 export default class UserService {
     static async createUser(user: CreateUserInput) {
         const conn = DatabaseConnection.getConnection();
-
         const id = randomUUID();
+
+        const other = await this.getUserByDiscordId(user.discord_id);
+
+        if (other) {
+            throw new AppError(400, 'User with discord ID already exists.');
+        }
+
         const ret = await conn
             .insertInto('user')
             .values({
@@ -32,11 +39,20 @@ export default class UserService {
 
     static async getUserByName(name: string) {
         const conn = DatabaseConnection.getConnection();
-        await conn
+        return await conn
             .selectFrom('user')
             .selectAll()
             .where('discord_username', '=', name)
-            .execute();
+            .executeTakeFirstOrThrow();
+    }
+
+    static async getUserByDiscordId(discordId: string) {
+        const conn = DatabaseConnection.getConnection();
+        return await conn
+            .selectFrom('user')
+            .selectAll()
+            .where('discord_id', '=', discordId)
+            .executeTakeFirstOrThrow();
     }
 
     static async deleteUser(id: string) {

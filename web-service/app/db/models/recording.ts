@@ -55,6 +55,7 @@ export const createRecordingMetadataSchema = recordingMetadataSchema
         id: true,
         created_at: true,
         updated_at: true,
+        created_by_id: true,
     })
     .extend({
         status: recordingStatusValueSchema.optional().default('QUEUED'),
