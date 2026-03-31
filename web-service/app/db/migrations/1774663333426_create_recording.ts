@@ -13,6 +13,7 @@ export async function up(db: Kysely<any>): Promise<void> {
         .addColumn('is_public', 'boolean', (col) =>
             col.notNull().defaultTo(false),
         )
+        .addColumn('name', 'text')
         .addColumn('created_by_id', 'uuid', (col) =>
             col.notNull().references('user.id'),
         )
@@ -33,7 +34,6 @@ export async function up(db: Kysely<any>): Promise<void> {
                 .onDelete('cascade'),
         )
         .addColumn('thumbnail_link', 'text', (col) => col.notNull())
-        .addColumn('name', 'text')
         .addColumn('s3_path', 'text', (col) => col.notNull())
         .addColumn('recorded_by', 'uuid', (col) =>
             col.notNull().references('user.id'),
@@ -62,12 +62,6 @@ export async function up(db: Kysely<any>): Promise<void> {
         .createIndex('video_id_index')
         .on('video')
         .column('id')
-        .execute();
-
-    await db.schema
-        .createIndex('video_name_index')
-        .on('video')
-        .column('name')
         .execute();
 }
 

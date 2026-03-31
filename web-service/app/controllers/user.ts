@@ -46,7 +46,8 @@ export default class UserController {
         }
 
         try {
-            const dbRes = await UserService.getUserByDiscordId(discordId);
+            const dbRes =
+                await UserService.getUserByDiscordIdAndThrow(discordId);
             res.json(dbRes);
         } catch (e: any) {
             throw new AppError(404, 'User not found.');

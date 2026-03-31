@@ -20,6 +20,7 @@ export default class VideoController {
     }
 
     static async getVideosByUserId(req: Request, res: Response) {
+        // TODO: Check if authed user can view the video (video is_public == true or their own ID, or is_admin)
         const userId = Array.isArray(req.params.id)
             ? req.params.id[0]
             : req.params.id;
@@ -63,6 +64,7 @@ export default class VideoController {
     }
 
     static async getVideoStatus(req: Request, res: Response) {
+        // TODO: Check if authed user can view the video (video is_public == true or their own ID)
         const id = Array.isArray(req.params.id)
             ? req.params.id[0]
             : req.params.id;
@@ -76,26 +78,33 @@ export default class VideoController {
             ? req.params.id[0]
             : req.params.id;
 
+        // TODO: Check if authed user can view the video (video is_public == true)
+
         const dbRes = await VideoService.getVideoId(id);
         res.json(dbRes);
     }
 
     static async updateVideoMetadata(req: Request, res: Response) {
+        // TODO: Only videos created by the same user can be edited by that user or an admin
         const id = Array.isArray(req.params.id)
             ? req.params.id[0]
             : req.params.id;
+
+        const user = await AuthService.getUserFromRequest(req);
+        delete req.body.user;
+
         const metadata = updateRecordingStatusSchema.parse({
             ...req.body,
             id,
         });
-
-        const user = await AuthService.getUserFromRequest(req);
 
         const dbRes = await VideoService.updateVideoMetadata(metadata, user.id);
         res.json(dbRes);
     }
 
     static async deleteVideoById(req: Request, res: Response) {
+        // TODO: Only videos created by the same user can be deleted by that user or an admin
+        // TODO: Cannot delete videos that aren't error or ready status
         const id = Array.isArray(req.params.id)
             ? req.params.id[0]
             : req.params.id;

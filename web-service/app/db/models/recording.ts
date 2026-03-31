@@ -45,6 +45,7 @@ export const recordingMetadataSchema = z
         replay_code: z.string().min(1),
         status: recordingStatusValueSchema,
         is_public: z.boolean(),
+        name: z.string().min(1).optional(),
         created_at: recordingDateSchema,
         updated_at: recordingDateSchema,
     })
@@ -62,8 +63,12 @@ export const createRecordingMetadataSchema = recordingMetadataSchema
         is_public: z.boolean().optional().default(false),
     });
 
-export const updateRecordingStatusSchema =
-    createRecordingMetadataSchema.partial().extend({
+export const updateRecordingStatusSchema = createRecordingMetadataSchema
+    .omit({
+        replay_code: true,
+    })
+    .partial()
+    .extend({
         id: z.uuid(),
     });
 

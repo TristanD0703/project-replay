@@ -46,13 +46,22 @@ export default class UserService {
             .executeTakeFirstOrThrow();
     }
 
-    static async getUserByDiscordId(discordId: string) {
+    static async getUserByDiscordIdAndThrow(discordId: string) {
         const conn = DatabaseConnection.getConnection();
         return await conn
             .selectFrom('user')
             .selectAll()
             .where('discord_id', '=', discordId)
             .executeTakeFirstOrThrow();
+    }
+
+    static async getUserByDiscordId(discordId: string) {
+        const conn = DatabaseConnection.getConnection();
+        return await conn
+            .selectFrom('user')
+            .selectAll()
+            .where('discord_id', '=', discordId)
+            .executeTakeFirst();
     }
 
     static async deleteUser(id: string) {
