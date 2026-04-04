@@ -55,6 +55,7 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
         err
     );
 
+    console.log(err);
     res.status(500).json({
         message: 'Internal server error',
     });
