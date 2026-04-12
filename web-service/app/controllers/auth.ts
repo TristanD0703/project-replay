@@ -1,6 +1,5 @@
 import passport from 'passport';
 import AuthService from '../services/auth';
-import { asyncHandler } from '../utils/async-handler';
 import { Request, Response } from 'express';
 
 export default class AuthController {

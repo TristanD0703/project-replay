@@ -5,14 +5,14 @@ import DatabaseConnection from '../db';
 import AppError from '../utils/app-error';
 
 export default class UserService {
-    static async createUser(user: CreateUserInput) {
+    static async getOrCreateUser(user: CreateUserInput) {
         const conn = DatabaseConnection.getConnection();
         const id = randomUUID();
 
         const other = await this.getUserByDiscordId(user.discord_id);
 
         if (other) {
-            throw new AppError(400, 'User with discord ID already exists.');
+            return other;
         }
 
         const ret = await conn
@@ -23,6 +23,8 @@ export default class UserService {
             })
             .returningAll()
             .executeTakeFirst();
+
+        if (!ret) throw new AppError(500, 'Create user failed');
 
         return ret;
     }

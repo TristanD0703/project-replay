@@ -9,9 +9,7 @@ import AuthService from '../services/auth';
 
 export default class VideoController {
     static async queueRecording(req: Request, res: Response) {
-        // TODO: Unjankify with real auth
-        const user = await AuthService.getUserFromRequest(req);
-        delete req.body.user;
+        const user = AuthService.getUserFromRequest(req);
 
         const metadata = createRecordingMetadataSchema.parse(req.body);
         const dbRes = await VideoService.queueRecording(metadata, user.id);
@@ -24,41 +22,38 @@ export default class VideoController {
         const userId = Array.isArray(req.params.id)
             ? req.params.id[0]
             : req.params.id;
-
         const skipParam = Array.isArray(req.query.skip)
             ? req.query.skip[0]
             : req.query.skip;
-
         const countParam = Array.isArray(req.query.count)
             ? req.query.count[0]
             : req.query.count;
-
+        const currUser = AuthService.getUserFromRequest(req);
         let skip = 0;
         let count = 20;
 
-        if (skipParam) {
-            skip = Number.parseInt(String(skipParam));
-        }
+        if (skipParam) skip = Number.parseInt(String(skipParam));
 
-        if (countParam) {
-            count = Number.parseInt(String(countParam));
-        }
+        if (countParam) count = Number.parseInt(String(countParam));
 
-        if (skip < 0) {
+        if (skip < 0)
             throw new AppError(
                 400,
                 'Query parameter skip must be a non-negative integer',
             );
-        }
 
-        if (count < 1) {
+        if (count < 1)
             throw new AppError(
                 400,
                 'Query parameter count must be a positive integer',
             );
-        }
 
-        const dbRes = await VideoService.getVideosByUserId(userId, skip, count);
+        const dbRes = await VideoService.getVideosByUserId(
+            userId,
+            skip,
+            count,
+            currUser.id,
+        );
 
         res.json(dbRes);
     }
@@ -109,7 +104,7 @@ export default class VideoController {
             ? req.params.id[0]
             : req.params.id;
 
-        const user = await AuthService.getUserFromRequest(req);
+        const user = AuthService.getUserFromRequest(req);
 
         await VideoService.deleteVideoById(id, user.id);
 

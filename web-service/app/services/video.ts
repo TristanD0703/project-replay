@@ -34,17 +34,28 @@ export default class VideoService {
         //TODO: Create a queue item to record this replay code
     }
 
-    static async getVideosByUserId(id: string, skip: number, count: number) {
+    static async getVideosByUserId(
+        id: string,
+        skip: number,
+        count: number,
+        currentUserId: string,
+    ) {
         const conn = DatabaseConnection.getConnection();
-
-        const ret = await conn
+        let query = conn
             .selectFrom('recording_metadata')
             .selectAll()
             .where('created_by_id', '=', id)
             .orderBy('created_at', 'desc')
             .offset(skip)
-            .limit(count)
-            .execute();
+            .limit(count);
+
+        const onlyPublic = currentUserId !== id;
+
+        if (onlyPublic) {
+            query = query.where('is_public', '=', true);
+        }
+
+        const ret = await query.execute();
 
         return ret;
     }

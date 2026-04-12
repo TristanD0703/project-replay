@@ -9,7 +9,7 @@ export default class UserController {
     static async createUser(req: Request, res: Response) {
         const user = createUserSchema.parse(req.body);
 
-        const dbRes = await UserService.createUser(user);
+        const dbRes = await UserService.getOrCreateUser(user);
 
         res.status(201).json(dbRes);
     }
