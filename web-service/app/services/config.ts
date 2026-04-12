@@ -17,6 +17,11 @@ export default class ConfigService {
             process.env.DISCORD_CLIENT_SECRET;
         if (!ConfigService.config.DISCORD_CLIENT_SECRET)
             throw new Error('DISCORD_CLIENT_SECRET not in env');
+
+        ConfigService.config.DATABASE_CONNECTION_STRING =
+            process.env.DATABASE_CONNECTION_STRING;
+        if (!ConfigService.config.DATABASE_CONNECTION_STRING)
+            throw new Error('DATABASE_CONNECTION_STRING not in env');
     }
 
     public static getValue(key: string) {

@@ -1,19 +1,18 @@
 import { Kysely, PostgresDialect } from 'kysely';
 import { Database } from './database';
 import { Pool } from 'pg';
+import ConfigService from '../services/config';
 
 export default class DatabaseConnection {
     private static connection?: Kysely<Database>;
     private static pool?: Pool;
 
     static connect() {
+        
         this.pool = new Pool({
-            host: '127.0.0.1',
-            database: 'project_rewind',
-            user: 'postgres',
-            password: 'postgres',
-            port: 5432,
-            max: 10,
+            connectionString: ConfigService.getValue(
+                'DATABASE_CONNECTION_STRING',
+            ),
         });
 
         const dialect = new PostgresDialect({

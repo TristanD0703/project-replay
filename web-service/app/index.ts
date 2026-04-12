@@ -27,5 +27,5 @@ VideoController.registerRoutes(app);
 app.use(errorMiddleware); // This order is intentional as errors occur last in the request pipeline
 
 app.listen(8080, () => {
-    console.log(`Example app listening on port 8080`);
+    console.log(`[INIT] Project Rewind listening on port 8080`);
 });
