@@ -78,14 +78,11 @@ export default class AuthService {
         next(undefined, localUser);
     }
 
-    // TODO: NEED TO IMPLEMENT ACTUAL AUTH HERE. DO NOT LEAVE IN PROD!
     static getUserFromRequest(req: Request): User {
         if (!req.user) throw new AppError(401, 'Missing authenticated user');
 
         return req.user as User;
     }
-
-    static async isUserValid(profile: any) {}
 
     async getOrRefreshAccessTokenByUser(userId: string) {
         const conn = DatabaseConnection.getConnection();
@@ -144,9 +141,7 @@ export default class AuthService {
 
         const res = await axios.get<DiscordUserResponse>(
             this.discordBaseApiUrl + '/oauth2/@me',
-            {
-                headers,
-            },
+            { headers },
         );
 
         return res.data.user;
