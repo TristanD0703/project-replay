@@ -3,10 +3,15 @@ import AppError from '../utils/app-error';
 import { createUserSchema } from '../db/models/user';
 import UserService from '../services/user';
 import { asyncHandler } from '../utils/async-handler';
+import AuthService from '../services/auth';
 
 export default class UserController {
   static async createUser(req: Request, res: Response) {
     const user = createUserSchema.parse(req.body);
+
+    const userFromReq = AuthService.getUserFromRequest(req);
+
+    if (!userFromReq.is_admin) throw new AppError(403, "Cannot create user programmatically if not admin")
 
     const dbRes = await UserService.getOrCreateUser(user);
 

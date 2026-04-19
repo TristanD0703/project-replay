@@ -107,7 +107,7 @@ export interface RecordingMetadataModel extends Omit<
     >;
 }
 
-export type RecordingStatus = Selectable<RecordingMetadataModel>;
+export type RecordingMetadata = Selectable<RecordingMetadataModel>;
 export type RecordingStatusInput = RecordingMetadataSchema;
 export type CreateRecordingMetadataInput = z.infer<
     typeof createRecordingMetadataSchema
