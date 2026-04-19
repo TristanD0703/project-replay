@@ -80,7 +80,8 @@ export default class UserController {
       ? req.params.id[0]
       : req.params.id;
 
-    await UserService.deleteUser(id);
+    const user = AuthService.getUserFromRequest(req);
+    await UserService.deleteUser(id, user);
 
     res.sendStatus(200);
   }
