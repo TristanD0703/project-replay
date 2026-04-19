@@ -2,137 +2,171 @@ import { randomUUID } from 'crypto';
 
 import DatabaseConnection from '../db';
 import {
-    CreateRecordingMetadataInput,
-    RecordingMetadataUpdate,
-    UpdateRecordingMetadataInput,
+  CreateRecordingMetadataInput,
+  RecordingMetadata,
+  RecordingMetadataUpdate,
+  UpdateRecordingMetadataInput,
 } from '../db/models/recording';
 import AppError from '../utils/app-error';
+import { User } from '../db/models/user';
 
 export default class VideoService {
-    static async queueRecording(
-        metadata: CreateRecordingMetadataInput,
-        userId: string,
-    ) {
-        const conn = DatabaseConnection.getConnection();
-        const id = randomUUID();
+  static async queueRecording(
+    metadata: CreateRecordingMetadataInput,
+    userId: string,
+  ) {
+    const conn = DatabaseConnection.getConnection();
+    const id = randomUUID();
 
-        try {
-            const ret = await conn
-                .insertInto('recording_metadata')
-                .values({
-                    ...metadata,
-                    created_by_id: userId,
-                    id,
-                })
-                .returningAll()
-                .executeTakeFirst();
-            return ret;
-        } catch (e: any) {
-            console.log(e.constructor.name);
-        }
-
-        //TODO: Create a queue item to record this replay code
+    try {
+      const ret = await conn
+        .insertInto('recording_metadata')
+        .values({
+          ...metadata,
+          created_by_id: userId,
+          id,
+        })
+        .returningAll()
+        .executeTakeFirst();
+      return ret;
+    } catch (e: any) {
+      throw new AppError(500, e.message);
     }
 
-    static async getVideosByUserId(id: string, skip: number, count: number) {
-        const conn = DatabaseConnection.getConnection();
+    //TODO: Create a queue item to record this replay code
+  }
 
-        const ret = await conn
-            .selectFrom('recording_metadata')
-            .selectAll()
-            .where('created_by_id', '=', id)
-            .orderBy('created_at', 'desc')
-            .offset(skip)
-            .limit(count)
-            .execute();
+  static async getVideosByUserId(
+    id: string,
+    skip: number,
+    count: number,
+    currentUserId: string,
+    isUserAdmin: boolean,
+  ) {
+    const conn = DatabaseConnection.getConnection();
+    let query = conn
+      .selectFrom('recording_metadata')
+      .selectAll()
+      .where('created_by_id', '=', id)
+      .orderBy('created_at', 'desc')
+      .offset(skip)
+      .limit(count);
 
-        return ret;
+    const onlyPublic = currentUserId !== id && !isUserAdmin;
+
+    if (onlyPublic) {
+      query = query.where('is_public', '=', true);
     }
 
-    static async getVideoStatus(id: string) {
-        const conn = DatabaseConnection.getConnection();
+    const ret = await query.execute();
 
-        const ret = await conn
-            .selectFrom('recording_metadata')
-            .select('status')
-            .where('id', '=', id)
-            .executeTakeFirstOrThrow();
+    return ret;
+  }
 
-        return ret;
+  static async getVideoStatus(id: string, user: User) {
+    const conn = DatabaseConnection.getConnection();
+
+    if (!(await this.canUserViewVideoId(user, id))) {
+      throw new AppError(403, 'User does not own this video');
     }
 
-    static async getVideoId(id: string) {
-        const conn = DatabaseConnection.getConnection();
+    const ret = await conn
+      .selectFrom('recording_metadata')
+      .select('status')
+      .where('id', '=', id)
+      .executeTakeFirstOrThrow();
 
-        const ret = await conn
-            .selectFrom('recording_metadata')
-            .selectAll()
-            .where('id', '=', id)
-            .executeTakeFirstOrThrow();
+    return ret;
+  }
 
-        return ret;
+  static async getVideoId(id: string, user: User) {
+    const conn = DatabaseConnection.getConnection();
+
+    const ret = await conn
+      .selectFrom('recording_metadata')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirstOrThrow();
+
+    if (!this.canUserViewVideo(user, ret))
+      throw new AppError(403, 'User does not own this video');
+
+    return ret;
+  }
+
+  static async updateVideoMetadata(
+    metadata: UpdateRecordingMetadataInput,
+    user: User,
+  ) {
+    const conn = DatabaseConnection.getConnection();
+    const { id, ...updateData } = metadata;
+
+    if (!(await this.canUserViewVideoId(user, id))) {
+      throw new AppError(403, 'User does not own this video');
     }
 
-    static async updateVideoMetadata(
-        metadata: UpdateRecordingMetadataInput,
-        userId: string,
-    ) {
-        const conn = DatabaseConnection.getConnection();
-        const { id, ...updateData } = metadata;
+    const values: RecordingMetadataUpdate = {
+      ...updateData,
+      updated_at: new Date(),
+    };
 
-        if (!(await this.doesUserOwnVideoId(userId, id))) {
-            throw new AppError(403, 'User does not own this video');
-        }
+    const ret = await conn
+      .updateTable('recording_metadata')
+      .set(values)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
 
-        const values: RecordingMetadataUpdate = {
-            ...updateData,
-            updated_at: new Date(),
-        };
-
-        const ret = await conn
-            .updateTable('recording_metadata')
-            .set(values)
-            .where('id', '=', id)
-            .returningAll()
-            .executeTakeFirst();
-
-        if (!ret) {
-            throw new AppError(404, 'Video not found');
-        }
-
-        return ret;
+    if (!ret) {
+      throw new AppError(404, 'Video not found');
     }
 
-    static async deleteVideoById(id: string, userId: string) {
-        const conn = DatabaseConnection.getConnection();
+    return ret;
+  }
 
-        if (!(await this.doesUserOwnVideoId(userId, id))) {
-            throw new AppError(403, 'User does not own this video');
-        }
+  static async deleteVideoById(id: string, user: User) {
+    const conn = DatabaseConnection.getConnection();
 
-        const ret = await conn
-            .deleteFrom('recording_metadata')
-            .where('id', '=', id)
-            .executeTakeFirst();
-
-        if (ret.numDeletedRows === 0n) {
-            throw new AppError(404, 'Video not found');
-        }
-
-        return ret;
+    if (!(await this.canUserViewVideoId(user, id))) {
+      throw new AppError(403, 'User does not own this video');
     }
 
-    private static async doesUserOwnVideoId(
-        userId: string,
-        videoId: string,
-    ): Promise<boolean> {
-        const conn = DatabaseConnection.getConnection();
-        const res = await conn
-            .selectFrom('recording_metadata')
-            .select('id')
-            .where('id', '=', videoId)
-            .where('created_by_id', '=', userId)
-            .executeTakeFirst();
-        return !!res;
+    const ret = await conn
+      .deleteFrom('recording_metadata')
+      .where('id', '=', id)
+      .executeTakeFirst();
+
+    if (ret.numDeletedRows === 0n) {
+      throw new AppError(404, 'Video not found');
     }
+
+    return ret;
+  }
+
+  private static canUserViewVideo(
+    user: User,
+    video: RecordingMetadata,
+  ): boolean {
+    return (
+      user.is_admin || video.created_by_id === user.id || video.is_public
+    );
+  }
+
+  private static async canUserViewVideoId(
+    user: User,
+    videoId: string,
+  ): Promise<boolean> {
+    if (user.is_admin) return true;
+
+    const conn = DatabaseConnection.getConnection();
+
+    const video = await conn
+      .selectFrom('recording_metadata')
+      .selectAll()
+      .where('id', '=', videoId)
+      .where('created_by_id', '=', user.id)
+      .executeTakeFirst();
+
+    return video !== null && video !== undefined;
+  }
 }

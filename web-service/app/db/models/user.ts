@@ -36,8 +36,10 @@ export const updateUserSchema = createUserSchema.partial();
 
 type UserSchema = z.infer<typeof userSchema>;
 
-export interface UserModel
-    extends Omit<UserSchema, 'created_at' | 'updated_at'> {
+export interface UserModel extends Omit<
+    UserSchema,
+    'created_at' | 'updated_at'
+> {
     created_at: ColumnType<UserSchema['created_at'], string | undefined, never>;
     updated_at: ColumnType<UserSchema['updated_at'], string | undefined, never>;
 }
