@@ -147,7 +147,7 @@ export default class VideoService {
     user: User,
     video: RecordingMetadata
   ): boolean {
-    return user.is_admin || video.created_by_id === user.id
+    return user.is_admin || video.created_by_id === user.id || video.is_public
   }
 
   private static async canUserViewVideoId(user: User, videoId: string): Promise<boolean> {
