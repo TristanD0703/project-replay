@@ -143,10 +143,10 @@ export default class VideoService {
     return ret;
   }
 
-  private static async canUserViewVideo(
+  private static canUserViewVideo(
     user: User,
     video: RecordingMetadata
-  ): Promise<boolean> {
+  ): boolean {
     return user.is_admin || video.created_by_id === user.id
   }
 

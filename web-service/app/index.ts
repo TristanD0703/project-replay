@@ -19,6 +19,7 @@ const app = Express();
 app.use(Express.json());
 app.use(loggingMiddleware);
 app.use(SessionMiddleware());
+app.use(passport.initialize());
 app.use(passport.authenticate('session'));
 app.use(CheckUserMiddleware(['/auth/login', '/auth/callback']));
 

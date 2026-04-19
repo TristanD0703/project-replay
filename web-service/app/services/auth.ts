@@ -26,7 +26,6 @@ export default class AuthService {
     constructor() {
         const clientID = ConfigService.getValue('DISCORD_CLIENT_ID');
         const clientSecret = ConfigService.getValue('DISCORD_CLIENT_SECRET');
-        passport.initialize();
         passport.use(
             new OAuth2Strategy(
                 {
