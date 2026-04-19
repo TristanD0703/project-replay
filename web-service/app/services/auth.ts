@@ -41,11 +41,15 @@ export default class AuthService {
     );
 
     passport.serializeUser((user, done) => {
-      done(undefined, user);
+      const internalUser = user as User;
+
+      done(undefined, internalUser.id);
     });
 
-    passport.deserializeUser((user, done) => {
-      done(undefined, user as User);
+    passport.deserializeUser(async (user, done) => {
+      console.log('DESERIALIZE', user);
+      const dbUser = await UserService.getUserById(user as string);
+      done(undefined, dbUser as User);
     });
   }
 
@@ -58,22 +62,27 @@ export default class AuthService {
   ) {
     const user = await AuthService.getRemoteUserInfo(accessToken);
 
-    const localUser = await UserService.getOrCreateUser({
-      discord_username: user.global_name,
-      discord_avatar_hash: user.avatar,
-      discord_id: user.id,
-      is_streamer: false,
-      is_admin: false,
-    });
+    let localUser: User;
+    try {
+      localUser = await UserService.getOrCreateUser({
+        discord_username: user.global_name,
+        discord_avatar_hash: user.avatar,
+        discord_id: user.id,
+        is_streamer: false,
+        is_admin: false,
+      });
 
-    await AuthService.saveTokens(
-      accessToken,
-      refreshToken,
-      params.expires_in,
-      localUser.id,
-    );
+      await AuthService.saveTokens(
+        accessToken,
+        refreshToken,
+        params.expires_in,
+        localUser.id,
+      );
+    } catch (e: any) {
+      next(e, undefined);
+      return;
+    }
 
-    console.log(user, localUser);
     next(undefined, localUser);
   }
 
@@ -111,6 +120,8 @@ export default class AuthService {
     const body = {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
+      client_id: ConfigService.getValue('DISCORD_CLIENT_ID'),
+      client_secret: ConfigService.getValue('DISCORD_CLIENT_SECRET'),
     };
 
     const res = await axios.post<{
@@ -119,7 +130,7 @@ export default class AuthService {
       expires_in: number;
     }>(AuthService.discordBaseApiUrl + '/oauth2/token', body, {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-url-encoded',
       },
     });
 
@@ -154,7 +165,10 @@ export default class AuthService {
   ) {
     const conn = DatabaseConnection.getConnection();
 
-    const deletePromise = conn.deleteFrom('tokens').where('user_id', '=', userId).execute();
+    const deletePromise = conn
+      .deleteFrom('tokens')
+      .where('user_id', '=', userId)
+      .execute();
 
     const encryption = new Encryption();
     const salt = encryption.generateSalt();
@@ -162,7 +176,7 @@ export default class AuthService {
     const [encAccess, encRefresh] = await Promise.all([
       encryption.encrypt(accessToken, salt),
       encryption.encrypt(refreshToken, salt),
-      deletePromise
+      deletePromise,
     ]);
 
     const expiresInMillis = expiresIn * 1000;

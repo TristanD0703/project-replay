@@ -1,9 +1,7 @@
 import { randomUUID } from 'crypto';
-
 import { CreateUserInput, User } from '../db/models/user';
 import DatabaseConnection from '../db';
 import AppError from '../utils/app-error';
-import AuthService from './auth';
 
 export default class UserService {
   static async getOrCreateUser(user: CreateUserInput) {
@@ -69,7 +67,7 @@ export default class UserService {
 
   static async deleteUser(id: string, currUser: User) {
     const conn = DatabaseConnection.getConnection();
-    if (currUser.id !== id || !currUser.is_admin) return;
+    if (currUser.id !== id && !currUser.is_admin) return;
 
     const ret = await conn
       .deleteFrom('user')

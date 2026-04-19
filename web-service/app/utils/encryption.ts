@@ -24,7 +24,10 @@ export default class Encryption {
     async encrypt(data: string, salt: string): Promise<string> {
         const promise = new Promise<string>((res, rej) => {
             scrypt(this.password, salt, 24, (err, key) => {
-                if (err) rej(err);
+                if (err) {
+                    rej(err);
+                    return;
+                }
                 const iv = new Uint8Array(16);
 
                 const cipher = createCipheriv(this.algorithm, key, iv);

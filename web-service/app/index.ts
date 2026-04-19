@@ -33,5 +33,5 @@ VideoController.registerRoutes(app);
 app.use(errorMiddleware);
 
 app.listen(8080, () => {
-  console.log(`[INIT] Project Rewind listening on port 8080`);
+    console.log(`[INIT] Project Rewind listening on port 8080`);
 });

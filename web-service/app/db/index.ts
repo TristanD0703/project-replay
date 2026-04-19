@@ -8,7 +8,6 @@ export default class DatabaseConnection {
     private static pool?: Pool;
 
     static connect() {
-        
         this.pool = new Pool({
             connectionString: ConfigService.getValue(
                 'DATABASE_CONNECTION_STRING',

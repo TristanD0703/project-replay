@@ -52,7 +52,7 @@ export default class VideoController {
       skip,
       count,
       currUser.id,
-      currUser.is_admin
+      currUser.is_admin,
     );
 
     res.json(dbRes);
@@ -89,7 +89,6 @@ export default class VideoController {
       : req.params.id;
 
     const user = AuthService.getUserFromRequest(req);
-    delete req.body.user;
 
     const metadata = updateRecordingStatusSchema.parse({
       ...req.body,

@@ -10,23 +10,24 @@ const pgSession = PGSimple(session);
 const secret = ConfigService.getValue('SESSION_SECRET');
 
 export const SessionMiddleware = () =>
-    session({
-        store: new pgSession({
-            pool: DatabaseConnection.getPool(),
-            createTableIfMissing: true,
-        }),
-        secret,
-        resave: false,
-        saveUninitialized: false,
-    });
+  // TODO: Look into configuring this further when ready to deploy
+  session({
+    store: new pgSession({
+      pool: DatabaseConnection.getPool(),
+      createTableIfMissing: true,
+    }),
+    secret,
+    resave: false,
+    saveUninitialized: false,
+  });
 
 export const CheckUserMiddleware = (publicEndpoints: string[]) => {
-    const pubSet = new Set(publicEndpoints);
+  const pubSet = new Set(publicEndpoints);
 
-    return (req: Request, res: Response, next: NextFunction) => {
-        if (!pubSet.has(req.path) && !req.user)
-            throw new AppError(401, 'Missing authenticated user');
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!pubSet.has(req.path) && !req.user)
+      throw new AppError(401, 'Missing authenticated user');
 
-        next();
-    };
+    next();
+  };
 };

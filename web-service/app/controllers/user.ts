@@ -11,7 +11,11 @@ export default class UserController {
 
     const userFromReq = AuthService.getUserFromRequest(req);
 
-    if (!userFromReq.is_admin) throw new AppError(403, "Cannot create user programmatically if not admin")
+    if (!userFromReq.is_admin)
+      throw new AppError(
+        403,
+        'Cannot create user programmatically if not admin',
+      );
 
     const dbRes = await UserService.getOrCreateUser(user);
 
@@ -81,15 +85,19 @@ export default class UserController {
       : req.params.id;
 
     const user = AuthService.getUserFromRequest(req);
-    await UserService.deleteUser(id, user);
+    const ret = await UserService.deleteUser(id, user);
+
+    if (!ret) {
+      throw new AppError(404, 'User not found');
+    }
 
     res.sendStatus(200);
   }
 
   static registerRoutes(app: any) {
     app.post('/user', asyncHandler(this.createUser));
-    app.get('/user/:id', asyncHandler(this.getUserById));
+    app.get('/user/:userId', asyncHandler(this.getUserById));
     app.get('/user/', asyncHandler(this.getUserByQuery));
-    app.delete('/user/:id', asyncHandler(this.deleteUserById));
+    app.delete('/user/:userId', asyncHandler(this.deleteUserById));
   }
 }

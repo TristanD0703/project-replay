@@ -30,7 +30,7 @@ export default class VideoService {
         .executeTakeFirst();
       return ret;
     } catch (e: any) {
-      console.log(e.constructor.name);
+      throw new AppError(500, e.message);
     }
 
     //TODO: Create a queue item to record this replay code
@@ -41,7 +41,7 @@ export default class VideoService {
     skip: number,
     count: number,
     currentUserId: string,
-    isUserAdmin: boolean
+    isUserAdmin: boolean,
   ) {
     const conn = DatabaseConnection.getConnection();
     let query = conn
@@ -96,7 +96,7 @@ export default class VideoService {
 
   static async updateVideoMetadata(
     metadata: UpdateRecordingMetadataInput,
-    user: User
+    user: User,
   ) {
     const conn = DatabaseConnection.getConnection();
     const { id, ...updateData } = metadata;
@@ -145,12 +145,17 @@ export default class VideoService {
 
   private static canUserViewVideo(
     user: User,
-    video: RecordingMetadata
+    video: RecordingMetadata,
   ): boolean {
-    return user.is_admin || video.created_by_id === user.id || video.is_public
+    return (
+      user.is_admin || video.created_by_id === user.id || video.is_public
+    );
   }
 
-  private static async canUserViewVideoId(user: User, videoId: string): Promise<boolean> {
+  private static async canUserViewVideoId(
+    user: User,
+    videoId: string,
+  ): Promise<boolean> {
     if (user.is_admin) return true;
 
     const conn = DatabaseConnection.getConnection();
@@ -162,7 +167,6 @@ export default class VideoService {
       .where('created_by_id', '=', user.id)
       .executeTakeFirst();
 
-    return video !== null && video !== undefined
+    return video !== null && video !== undefined;
   }
-
 }
