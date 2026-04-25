@@ -12,6 +12,9 @@ declare module "node-media-server" {
       publish?: boolean;
       secret?: string;
     };
+    record?: {
+      path: string;
+    };
     [key: string]: unknown;
   }
 
@@ -25,11 +28,16 @@ declare module "node-media-server" {
     protocol?: string;
     ip?: string;
     [key: string]: unknown;
+    close?: () => void;
+    stop?: () => void;
   }
 
   export default class NodeMediaServer {
     constructor(config: NodeMediaServerConfig);
-    on(eventName: string, listener: (session: NodeMediaServerSession) => void): void;
+    on(
+      eventName: string,
+      listener: (session: NodeMediaServerSession) => void,
+    ): void;
     run(): void;
   }
 }
