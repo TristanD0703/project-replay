@@ -2,12 +2,20 @@ import NodeMediaServer, { NodeMediaServerSession } from "node-media-server";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { exit } from "node:process";
+import { Deque } from "@datastructures-js/deque";
+import { isRealPNG } from "./utils";
 const nmsLogger = require("node-media-server/src/core/logger.js");
 
 export interface StreamServerOptions {
   listenAddr: string;
   port: number;
   tmpVideoStorageDirectory: string;
+}
+
+export interface FrameEvent {
+  type: "error" | "end" | "success";
+  frame?: Buffer;
+  message?: string;
 }
 
 interface User { }
@@ -18,6 +26,7 @@ type ConnectionData = {
   nmsSession: NodeMediaServerSession;
   user: User;
   streamPath: string;
+  frames: Deque<Buffer>;
 };
 
 type ConnectionRegistry = Map<string, ConnectionData>;
@@ -27,7 +36,7 @@ export class StreamServer {
    * streamKey -> connection data
    */
   private connectionRegistry: ConnectionRegistry;
-
+  private PNG_TRAILER_MARKER = Buffer.from("0000000049454E44AE426082", "hex");
   private opts: StreamServerOptions;
 
   constructor(opts: StreamServerOptions) {
@@ -72,11 +81,58 @@ export class StreamServer {
     });
 
     console.log("[StreamService] Shutdown success!");
-    exit(0);
   }
 
-  async *images(streamSessionId: string) {
-    //TODO: Receive image packages from ffmpeg, bundle and return image byte array
+  private imageLoop(streamKey: string) {
+    setTimeout(() => {
+      let conn = this.connectionRegistry.get(streamKey);
+      const front = conn?.frames.popFront();
+
+      if (!front) this.imageLoop(streamKey);
+    }, 5);
+  }
+
+  async *images(streamKey: string) {
+    let conn = this.connectionRegistry.get(streamKey);
+    if (!conn) {
+      yield {
+        type: "error",
+        message: "Stream key is not associated with a connection",
+      };
+      return;
+    }
+
+    while (conn !== undefined && conn !== null) {
+      const frameChunk = conn.frames.front();
+
+      if (!frameChunk) {
+        await new Promise((res) => setTimeout(res, 5));
+        conn = this.connectionRegistry.get(streamKey);
+        continue;
+      }
+
+      const popped = conn.frames.popFront();
+      if (!popped) {
+        conn = this.connectionRegistry.get(streamKey);
+        continue;
+      }
+
+      if (!(await isRealPNG(popped))) {
+        conn = this.connectionRegistry.get(streamKey);
+        continue;
+      }
+
+      yield {
+        type: "success",
+        frame: popped,
+      };
+
+      conn = this.connectionRegistry.get(streamKey);
+    }
+
+    yield {
+      type: "end",
+    };
   }
 
   private SILENCEEEE() {
@@ -138,6 +194,7 @@ export class StreamServer {
       user: {},
       streamPath,
       listenerSessions: new Set(),
+      frames: new Deque<Buffer>(),
     };
 
     this.connectionRegistry.set(streamKey, connection);
@@ -172,6 +229,8 @@ export class StreamServer {
       "[StreamService] Streming finished for sessionId: ",
       session.id,
     );
+
+    this.connectionRegistry.delete(streamKey);
   }
 
   private isFfmpegRunning(ffmpeg: ChildProcessWithoutNullStreams): boolean {
@@ -231,7 +290,15 @@ export class StreamServer {
     });
 
     ffmpeg.stdout.on("data", (chunk: Buffer) => {
-      console.log("TODO: handle png data! chunkLen: " + chunk.length);
+      const conn = this.connectionRegistry.get(streamKey);
+      if (!conn) {
+        console.warn(
+          "[StreamService] Received frame data while connection is not initialized",
+        );
+        return;
+      }
+
+      this.handlePNGChunk(chunk, conn);
     });
 
     ffmpeg.on("close", (code, signal) => {
@@ -303,7 +370,53 @@ export class StreamServer {
   }
 
   private registerShutdownHandlers(): void {
-    process.on("SIGINT", () => this.shutdown());
-    process.on("SIGTERM", () => this.shutdown());
+    process.on("SIGINT", () => {
+      this.shutdown();
+      exit(0);
+    });
+    process.on("SIGTERM", () => {
+      this.shutdown();
+      exit(0);
+    });
+  }
+
+  private handlePNGChunk(chunk: Buffer, conn: ConnectionData) {
+    const endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
+    if (endIndex >= 0) {
+      console.log("FOUND PNG END AT INDEX: ", endIndex);
+      const currPNGChunk = chunk.subarray(
+        0,
+        endIndex + this.PNG_TRAILER_MARKER.length,
+      );
+
+      const nextPNGChunk = chunk.subarray(
+        endIndex + this.PNG_TRAILER_MARKER.length,
+        chunk.length,
+      );
+
+      let back = conn.frames.back();
+      if (!back) {
+        conn.frames.pushBack(currPNGChunk);
+      } else {
+        back = conn.frames.popBack();
+        if (!back) {
+          throw new Error("WHAT?! GOT BACK BUT COULDN'T POP THE BACK?!");
+        }
+
+        back = Buffer.concat([back, currPNGChunk]);
+        conn.frames.pushBack(back);
+      }
+
+      back = conn.frames.back();
+      conn.frames.pushBack(nextPNGChunk);
+      if (!back) return;
+      isRealPNG(back).then((res) => console.log("DID WE DO IT?!?!", res));
+    } else {
+      let back = conn.frames.popBack();
+      if (back) {
+        chunk = Buffer.concat([back, chunk]);
+      }
+      conn.frames.pushBack(chunk);
+    }
   }
 }
