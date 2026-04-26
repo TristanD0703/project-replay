@@ -30,6 +30,7 @@ declare module "node-media-server" {
     [key: string]: unknown;
     close?: () => void;
     stop?: () => void;
+    reject: () => void;
   }
 
   export default class NodeMediaServer {
