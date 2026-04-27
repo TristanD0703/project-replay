@@ -1,5 +1,6 @@
 import { StreamServer } from "./stream-server";
 import { isRealPNG } from "./utils";
+import fs from "fs/promises";
 
 async function main(): Promise<void> {
   const poggies = new StreamServer({
@@ -10,11 +11,19 @@ async function main(): Promise<void> {
 
   poggies.start();
 
+  console.log("Waiting for connect...");
+  await poggies.waitUntilConnect("INSERTSTREAMKEYHERE", 10000);
+
+  let count = 0;
   for await (const frame of poggies.images("INSERTSTREAMKEYHERE")) {
-    console.log("FRAME DATA", frame);
     if (!frame.frame) continue;
 
-    console.log("IS FRAME?!?!", isRealPNG(frame.frame));
+    if (!isRealPNG(frame.frame))
+      throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
+
+    count++;
+    console.log("saving file...");
+    await fs.writeFile("./videos/frame-" + count + ".png", frame.frame);
   }
 }
 

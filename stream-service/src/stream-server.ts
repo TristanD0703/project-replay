@@ -102,6 +102,8 @@ export class StreamServer {
       return;
     }
 
+    let badCount = 0;
+
     while (conn !== undefined && conn !== null) {
       const frameChunk = conn.frames.front();
 
@@ -117,7 +119,10 @@ export class StreamServer {
         continue;
       }
 
-      if (!(await isRealPNG(popped))) {
+      if (!isRealPNG(popped)) {
+        badCount++;
+        if (badCount > 100)
+          throw new Error("Ain't no way it take this long for a frame 💀");
         conn = this.connectionRegistry.get(streamKey);
         continue;
       }
@@ -133,6 +138,25 @@ export class StreamServer {
     yield {
       type: "end",
     };
+  }
+
+  async waitUntilConnect(
+    streamKey: string,
+    timeoutMs: number,
+  ): Promise<boolean> {
+    const pollMs = 25;
+    const startedAt = Date.now();
+    while (true) {
+      const conn = this.connectionRegistry.get(streamKey);
+      if (conn) return true;
+      if (Date.now() - startedAt >= timeoutMs) {
+        console.warn(
+          `[StreamService] Timed out waiting for stream connection: ${streamKey}`,
+        );
+        return false;
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, pollMs));
+    }
   }
 
   private SILENCEEEE() {
@@ -381,9 +405,9 @@ export class StreamServer {
   }
 
   private handlePNGChunk(chunk: Buffer, conn: ConnectionData) {
+    console.log("Received chunk size: ", chunk.byteLength);
     const endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
     if (endIndex >= 0) {
-      console.log("FOUND PNG END AT INDEX: ", endIndex);
       const currPNGChunk = chunk.subarray(
         0,
         endIndex + this.PNG_TRAILER_MARKER.length,
@@ -409,8 +433,6 @@ export class StreamServer {
 
       back = conn.frames.back();
       conn.frames.pushBack(nextPNGChunk);
-      if (!back) return;
-      isRealPNG(back).then((res) => console.log("DID WE DO IT?!?!", res));
     } else {
       let back = conn.frames.popBack();
       if (back) {
