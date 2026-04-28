@@ -14,16 +14,20 @@ async function main(): Promise<void> {
   console.log("Waiting for connect...");
   await poggies.waitUntilConnect("INSERTSTREAMKEYHERE", 10000);
 
-  let count = 0;
+  let frames = 0;
   for await (const frame of poggies.images("INSERTSTREAMKEYHERE")) {
     if (!frame.frame) continue;
-
+    frames++;
     if (!isRealPNG(frame.frame))
       throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
 
-    count++;
-    console.log("saving file...");
-    await fs.writeFile("./videos/frame-" + count + ".png", frame.frame);
+    console.log("Received frame! Processing...");
+    console.log("Saving file...");
+    await fs.writeFile("./videos/frame-" + frames + ".png", frame.frame);
+    const start = Date.now();
+
+    const totalms = Date.now() - start;
+    console.log("Processing completed in ", totalms, "ms!");
   }
 }
 

@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import { exit } from "node:process";
 import { Deque } from "@datastructures-js/deque";
 import { isRealPNG } from "./utils";
-import { buffer } from "node:stream/consumers";
 const nmsLogger = require("node-media-server/src/core/logger.js");
 
 export interface StreamServerOptions {
@@ -398,7 +397,6 @@ export class StreamServer {
   }
 
   private handlePNGChunk(chunk: Buffer, conn: ConnectionData) {
-    console.log("Received chunk size: ", chunk.byteLength);
     let endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
     let chunkFrameCount = 0;
     while (endIndex >= 0) {
@@ -420,7 +418,6 @@ export class StreamServer {
       conn.frames.pushBack(back);
       conn.pendingFrame = Buffer.alloc(0);
     }
-    console.log("This chunk had ", chunkFrameCount, " frames");
     conn.pendingFrame = conn.pendingFrame
       ? Buffer.concat([conn.pendingFrame, chunk])
       : chunk;
