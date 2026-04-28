@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { exit } from "node:process";
 import { Deque } from "@datastructures-js/deque";
 import { isRealPNG } from "./utils";
+import { buffer } from "node:stream/consumers";
 const nmsLogger = require("node-media-server/src/core/logger.js");
 
 export interface StreamServerOptions {
@@ -27,6 +28,7 @@ type ConnectionData = {
   user: User;
   streamPath: string;
   frames: Deque<Buffer>;
+  pendingFrame?: Buffer;
 };
 
 type ConnectionRegistry = Map<string, ConnectionData>;
@@ -81,15 +83,6 @@ export class StreamServer {
     });
 
     console.log("[StreamService] Shutdown success!");
-  }
-
-  private imageLoop(streamKey: string) {
-    setTimeout(() => {
-      let conn = this.connectionRegistry.get(streamKey);
-      const front = conn?.frames.popFront();
-
-      if (!front) this.imageLoop(streamKey);
-    }, 5);
   }
 
   async *images(streamKey: string) {
@@ -406,39 +399,30 @@ export class StreamServer {
 
   private handlePNGChunk(chunk: Buffer, conn: ConnectionData) {
     console.log("Received chunk size: ", chunk.byteLength);
-    const endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
-    if (endIndex >= 0) {
+    let endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
+    let chunkFrameCount = 0;
+    while (endIndex >= 0) {
+      chunkFrameCount++;
       const currPNGChunk = chunk.subarray(
         0,
         endIndex + this.PNG_TRAILER_MARKER.length,
       );
 
-      const nextPNGChunk = chunk.subarray(
+      chunk = chunk.subarray(
         endIndex + this.PNG_TRAILER_MARKER.length,
         chunk.length,
       );
 
-      let back = conn.frames.back();
-      if (!back) {
-        conn.frames.pushBack(currPNGChunk);
-      } else {
-        back = conn.frames.popBack();
-        if (!back) {
-          throw new Error("WHAT?! GOT BACK BUT COULDN'T POP THE BACK?!");
-        }
+      endIndex = chunk.indexOf(this.PNG_TRAILER_MARKER);
 
-        back = Buffer.concat([back, currPNGChunk]);
-        conn.frames.pushBack(back);
-      }
-
-      back = conn.frames.back();
-      conn.frames.pushBack(nextPNGChunk);
-    } else {
-      let back = conn.frames.popBack();
-      if (back) {
-        chunk = Buffer.concat([back, chunk]);
-      }
-      conn.frames.pushBack(chunk);
+      let back = conn.pendingFrame ?? Buffer.alloc(0);
+      back = Buffer.concat([back, currPNGChunk]);
+      conn.frames.pushBack(back);
+      conn.pendingFrame = Buffer.alloc(0);
     }
+    console.log("This chunk had ", chunkFrameCount, " frames");
+    conn.pendingFrame = conn.pendingFrame
+      ? Buffer.concat([conn.pendingFrame, chunk])
+      : chunk;
   }
 }
