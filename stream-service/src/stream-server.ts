@@ -10,6 +10,7 @@ export interface StreamServerOptions {
   listenAddr: string;
   port: number;
   tmpVideoStorageDirectory: string;
+  maxFrameBuffer?: number;
 }
 
 export interface FrameEvent {

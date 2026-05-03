@@ -15,10 +15,19 @@
   "dependencies": {
     "@datastructures-js/deque": "^1.0.8",
     "@types/node": "^25.6.0",
+    "@u4/opencv4nodejs": "^7.1.2",
     "node-media-server": "^4.2.4",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
     "ts-node-dev": "^2.0.0"
+  },
+  "overrides": {
+    "@u4/opencv-build": {
+      "glob": "^11.1.0"
+    }
+  },
+  "opencv4nodejs": {
+    "disableAutoBuild": true
   }
 }

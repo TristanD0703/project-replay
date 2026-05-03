@@ -1,6 +1,7 @@
+import { writeFileSync } from "node:fs";
+import { FrameMatcher } from "./frame-text";
 import { StreamServer } from "./stream-server";
 import { isRealPNG } from "./utils";
-import fs from "fs/promises";
 
 async function main(): Promise<void> {
   const poggies = new StreamServer({
@@ -14,6 +15,17 @@ async function main(): Promise<void> {
   console.log("Waiting for connect...");
   await poggies.waitUntilConnect("INSERTSTREAMKEYHERE", 10000);
 
+  const matcher = new FrameMatcher({
+    REPLAY_NOT_FOUND: {
+      path: "./src/game-state-images/replay-not-found.png",
+      croppedX: 320,
+      croppedY: 235,
+      croppedWidth: 318,
+      croppedHeight: 65,
+      matchThreshold: 0.85,
+    },
+  });
+
   let frames = 0;
   for await (const frame of poggies.images("INSERTSTREAMKEYHERE")) {
     if (!frame.frame) continue;
@@ -22,12 +34,11 @@ async function main(): Promise<void> {
       throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
 
     console.log("Received frame! Processing...");
-    console.log("Saving file...");
-    await fs.writeFile("./videos/frame-" + frames + ".png", frame.frame);
-    const start = Date.now();
-
-    const totalms = Date.now() - start;
-    console.log("Processing completed in ", totalms, "ms!");
+    writeFileSync(`frames/frame-${frames}.png`, frame.frame);
+    console.log(
+      "Match found: ",
+      await matcher.checkBufferForMatch(frame.frame),
+    );
   }
 }
 
