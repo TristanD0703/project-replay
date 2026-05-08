@@ -34,7 +34,7 @@ async function main(): Promise<void> {
       throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
 
     console.log("Received frame! Processing...");
-    writeFileSync(`frames/frame-${frames}.png`, frame.frame);
+    // writeFileSync(`frames/frame-${frames}.png`, frame.frame);
     console.log(
       "Match found: ",
       await matcher.checkBufferForMatch(frame.frame),
