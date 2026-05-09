@@ -3,7 +3,7 @@ import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { exit } from "node:process";
 import { Deque } from "@datastructures-js/deque";
-import { isRealPNG } from "./utils";
+import { isRealPNG } from "../utils";
 const nmsLogger = require("node-media-server/src/core/logger.js");
 
 export interface StreamServerOptions {
@@ -40,13 +40,20 @@ export class StreamServer {
   private connectionRegistry: ConnectionRegistry;
   private PNG_TRAILER_MARKER = Buffer.from("0000000049454E44AE426082", "hex");
   private opts: StreamServerOptions;
+  private nms?: NodeMediaServer;
+  private hasStarted: boolean = false;
 
   constructor(opts: StreamServerOptions) {
     this.opts = opts;
     this.connectionRegistry = new Map<string, ConnectionData>();
   }
 
+  isRunning() {
+    return this.hasStarted;
+  }
+
   start() {
+    this.hasStarted = true;
     const nmsConfig = {
       bind: this.opts.listenAddr,
       rtmp: { port: this.opts.port },
@@ -57,35 +64,47 @@ export class StreamServer {
     };
 
     this.SILENCEEEE();
-    const nms = new NodeMediaServer(nmsConfig);
+    this.nms = new NodeMediaServer(nmsConfig);
 
-    nms.on("postPublish", (session) => this.streamerConnects(session));
-    nms.on("donePublish", (session) => this.streamerDisconnects(session));
-    nms.on("postPlay", (session) => this.listenerConnects(session));
-    nms.on("donePlay", (session) => this.listenerDisconnects(session));
+    this.nms.on("postPublish", (session) => this.streamerConnects(session));
+    this.nms.on("donePublish", (session) => this.streamerDisconnects(session));
+    this.nms.on("postPlay", (session) => this.listenerConnects(session));
+    this.nms.on("donePlay", (session) => this.listenerDisconnects(session));
     this.registerShutdownHandlers();
 
-    nms.run();
+    this.nms.run();
     console.log("[StreamServer] Streaming service started listening");
+  }
+
+  async disconnectClient(streamKey: string) {
+    console.log("[StreamServer] closing stream for key: ", streamKey);
+    const conn = this.connectionRegistry.get(streamKey);
+    if (!conn) return;
+
+    if (conn.nmsSession.stop) conn.nmsSession.stop();
+    if (conn.nmsSession.close) conn.nmsSession.close();
+
+    for (const listener of conn.listenerSessions) {
+      if (listener.close) listener.close();
+      if (listener.stop) listener.stop();
+
+      for (const ffmpeg of conn.ffmpegSessions)
+        await this.shutdownFfmpeg(ffmpeg, streamKey);
+    }
   }
 
   shutdown() {
     console.log("[StreamService] Gracefully shutting down...");
+    this.hasStarted = false;
 
     this.connectionRegistry.forEach((conn, streamKey) => {
-      for (const listener of conn.listenerSessions) {
-        if (listener.close) listener.close();
-        if (listener.stop) listener.stop();
-
-        for (const ffmpeg of conn.ffmpegSessions)
-          this.shutdownFfmpeg(ffmpeg, streamKey);
-      }
+      this.disconnectClient(streamKey);
     });
 
     console.log("[StreamService] Shutdown success!");
   }
 
-  async *images(streamKey: string) {
+  async *images(streamKey: string): AsyncGenerator<FrameEvent, void, unknown> {
     let conn = this.connectionRegistry.get(streamKey);
     if (!conn) {
       yield {
@@ -136,17 +155,17 @@ export class StreamServer {
   async waitUntilConnect(
     streamKey: string,
     timeoutMs: number,
-  ): Promise<boolean> {
+  ): Promise<string | undefined> {
     const pollMs = 25;
     const startedAt = Date.now();
     while (true) {
       const conn = this.connectionRegistry.get(streamKey);
-      if (conn) return true;
+      if (conn) return conn.streamPath;
       if (Date.now() - startedAt >= timeoutMs) {
         console.warn(
           `[StreamService] Timed out waiting for stream connection: ${streamKey}`,
         );
-        return false;
+        return;
       }
       await new Promise<void>((resolve) => setTimeout(resolve, pollMs));
     }
@@ -303,7 +322,9 @@ export class StreamServer {
     const ffmpeg = spawn("ffmpeg", this.craftFfmpegArgs(streamPath, streamKey));
 
     ffmpeg.stderr.on("data", (data) => {
-      console.log(`[ffmpeg ${session.id}] ${data.toString().trimEnd()}`);
+      console.log(
+        `[ffmpeg] ${data.toString().trimEnd()} streamKey: ${streamKey}`,
+      );
     });
 
     ffmpeg.stdout.on("data", (chunk: Buffer) => {
@@ -319,9 +340,7 @@ export class StreamServer {
     });
 
     ffmpeg.on("close", (code, signal) => {
-      console.log(
-        `ffmpeg exited for ${session.id}: code=${code} signal=${signal}`,
-      );
+      console.log(`[ffmpeg] exited for ${streamKey}: code=${code}`);
       ffmpegSessionSet.delete(ffmpeg);
     });
 

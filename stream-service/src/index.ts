@@ -1,7 +1,6 @@
-import { writeFileSync } from "node:fs";
-import { FrameMatcher } from "./frame-text";
-import { StreamServer } from "./stream-server";
-import { isRealPNG } from "./utils";
+import { FrameMatcher } from "./stream/frame-text";
+import { StreamServer } from "./stream/stream-server";
+import Stream from "./stream";
 
 async function main(): Promise<void> {
   const poggies = new StreamServer({
@@ -11,9 +10,6 @@ async function main(): Promise<void> {
   });
 
   poggies.start();
-
-  console.log("Waiting for connect...");
-  await poggies.waitUntilConnect("INSERTSTREAMKEYHERE", 10000);
 
   const matcher = new FrameMatcher({
     REPLAY_NOT_FOUND: {
@@ -42,20 +38,8 @@ async function main(): Promise<void> {
     },
   });
 
-  let frames = 0;
-  for await (const frame of poggies.images("INSERTSTREAMKEYHERE")) {
-    if (!frame.frame) continue;
-    frames++;
-    if (!isRealPNG(frame.frame))
-      throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
-
-    console.log("Received frame! Processing...");
-    // writeFileSync(`frames/frame-${frames}.png`, frame.frame);
-    console.log(
-      "Match found: ",
-      await matcher.checkBufferForMatch(frame.frame),
-    );
-  }
+  const stream = new Stream(poggies, matcher, "INSERTSTREAMKEYHERE");
+  stream.record();
 }
 
 main().catch((error: unknown) => {
