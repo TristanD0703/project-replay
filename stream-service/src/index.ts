@@ -24,6 +24,22 @@ async function main(): Promise<void> {
       croppedHeight: 65,
       matchThreshold: 0.85,
     },
+    REPLAY_IN_PROGRESS: {
+      path: "./src/game-state-images/replay-in-progress.png",
+      croppedX: 30,
+      croppedY: 20,
+      croppedWidth: 130,
+      croppedHeight: 125,
+      matchThreshold: 0.85,
+    },
+    REPLAY_CONCLUDED: {
+      path: "./src/game-state-images/replay-concluded.png",
+      croppedX: 425,
+      croppedY: 165,
+      croppedWidth: 112,
+      croppedHeight: 50,
+      matchThreshold: 0.85,
+    },
   });
 
   let frames = 0;
