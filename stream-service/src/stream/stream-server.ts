@@ -97,7 +97,7 @@ export class StreamServer {
     console.log("[StreamService] Gracefully shutting down...");
     this.hasStarted = false;
 
-    this.connectionRegistry.forEach((conn, streamKey) => {
+    this.connectionRegistry.forEach((_, streamKey) => {
       this.disconnectClient(streamKey);
     });
 

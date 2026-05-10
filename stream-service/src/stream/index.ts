@@ -43,7 +43,6 @@ export default class Stream {
     console.log(`[Stream] starting recording... ${this.streamKey}`);
 
     for await (const frame of this.streamServer.images(this.streamKey)) {
-      console.log("hello");
       if (frame.type === "end") break;
 
       if (frame.type === "error") {
@@ -72,7 +71,7 @@ export default class Stream {
     if (!handler && this.streamState === "REPLAY_CONCLUDED") {
       console.log(
         "[Stream] Stopping stream key due to receiving event ",
-        this.dispatchEvent,
+        this.streamState,
         this.streamKey,
       );
       await this.stop();
