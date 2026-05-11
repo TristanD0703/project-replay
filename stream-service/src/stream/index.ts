@@ -54,7 +54,7 @@ export default class Stream {
           frame.frame,
         );
 
-        this.dispatchEvent();
+        await this.dispatchEvent();
       }
     }
     return this.saveFile;

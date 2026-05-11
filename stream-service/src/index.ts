@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   });
 
   const stream = new Stream(poggies, matcher, "INSERTSTREAMKEYHERE");
-  stream.record();
+  await stream.record();
 }
 
 main().catch((error: unknown) => {
