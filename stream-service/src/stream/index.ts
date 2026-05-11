@@ -1,7 +1,7 @@
 import { FrameMatcher } from "./frame-text";
 import { StreamServer } from "./stream-server";
 
-const DEFAULT_STRAEM_CONNECT_TIMEOUT = 10000;
+const DEFAULT_STREAM_CONNECT_TIMEOUT = 10000;
 
 export default class Stream {
   private streamState: string = "STOPPED";
@@ -23,7 +23,7 @@ export default class Stream {
   }
 
   async record(
-    connectTimeout: number = DEFAULT_STRAEM_CONNECT_TIMEOUT,
+    connectTimeout: number = DEFAULT_STREAM_CONNECT_TIMEOUT,
   ): Promise<string> {
     console.log(`[Stream] initializing stream for key ${this.streamKey}`);
 

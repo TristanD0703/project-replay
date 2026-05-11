@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { exit } from "node:process";
 import { Deque } from "@datastructures-js/deque";
 import { isRealPNG } from "../utils";
+import { undistortPoints } from "@u4/opencv4nodejs";
 const nmsLogger = require("node-media-server/src/core/logger.js");
 
 export interface StreamServerOptions {
@@ -93,14 +94,16 @@ export class StreamServer {
     }
   }
 
-  shutdown() {
+  async shutdown() {
     console.log("[StreamService] Gracefully shutting down...");
     this.hasStarted = false;
 
-    this.connectionRegistry.forEach((_, streamKey) => {
-      this.disconnectClient(streamKey);
-    });
+    const promises: Promise<void>[] = [];
+    for (const key of this.connectionRegistry.keys()) {
+      promises.push(this.disconnectClient(key));
+    }
 
+    await Promise.all(promises);
     console.log("[StreamService] Shutdown success!");
   }
 
@@ -406,12 +409,12 @@ export class StreamServer {
   }
 
   private registerShutdownHandlers(): void {
-    process.on("SIGINT", () => {
-      this.shutdown();
+    process.on("SIGINT", async () => {
+      await this.shutdown();
       exit(0);
     });
-    process.on("SIGTERM", () => {
-      this.shutdown();
+    process.on("SIGTERM", async () => {
+      await this.shutdown();
       exit(0);
     });
   }
@@ -435,6 +438,14 @@ export class StreamServer {
 
       let back = conn.pendingFrame ?? Buffer.alloc(0);
       back = Buffer.concat([back, currPNGChunk]);
+
+      if (
+        this.opts.maxFrameBuffer !== undefined &&
+        conn.frames.size() >= this.opts.maxFrameBuffer
+      ) {
+        conn.frames.popFront();
+      }
+
       conn.frames.pushBack(back);
       conn.pendingFrame = Buffer.alloc(0);
     }
