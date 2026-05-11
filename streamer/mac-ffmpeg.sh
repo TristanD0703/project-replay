@@ -1,0 +1,17 @@
+ffmpeg \
+  -hide_banner \
+  -benchmark \
+  -f avfoundation \
+  -framerate 30 \
+  -video_size 1920x1080 \
+  -i "0:4" \
+  -c:v h264_videotoolbox \
+  -b:v 4500k \
+  -maxrate 4500k \
+  -bufsize 9000k \
+  -g 60 \
+  -pix_fmt yuv420p \
+  -c:a aac \
+  -b:a 128k \
+  -f flv \
+  -af "aresample=async=1000:first_pts=0" \rtmp://localhost:1935/INSERTSTREAMKEYHERE

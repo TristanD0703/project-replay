@@ -1,0 +1,1 @@
+ffmpeg -hide_banner   -f v4l2   -input_format mjpeg   -framerate 30   -video_size 1280x720   -i /dev/video0   -vf "format=yuv420p"   -c:v h264_v4l2m2m   -b:v 2500k   -maxrate 2500k   -bufsize 5000k   -g 60   -bf 0   -an   -f flv rtmp://192.168.1.64/INSERTSTREAMKEYHERE

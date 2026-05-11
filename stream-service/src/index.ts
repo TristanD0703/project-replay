@@ -1,6 +1,6 @@
-import { StreamServer } from "./stream-server";
-import { isRealPNG } from "./utils";
-import fs from "fs/promises";
+import { FrameMatcher } from "./stream/frame-text";
+import { StreamServer } from "./stream/stream-server";
+import Stream from "./stream";
 
 async function main(): Promise<void> {
   const poggies = new StreamServer({
@@ -11,24 +11,35 @@ async function main(): Promise<void> {
 
   poggies.start();
 
-  console.log("Waiting for connect...");
-  await poggies.waitUntilConnect("INSERTSTREAMKEYHERE", 10000);
+  const matcher = new FrameMatcher({
+    REPLAY_NOT_FOUND: {
+      path: "./src/game-state-images/replay-not-found.png",
+      croppedX: 320,
+      croppedY: 235,
+      croppedWidth: 318,
+      croppedHeight: 65,
+      matchThreshold: 0.85,
+    },
+    REPLAY_IN_PROGRESS: {
+      path: "./src/game-state-images/replay-in-progress.png",
+      croppedX: 30,
+      croppedY: 20,
+      croppedWidth: 130,
+      croppedHeight: 125,
+      matchThreshold: 0.85,
+    },
+    REPLAY_CONCLUDED: {
+      path: "./src/game-state-images/replay-concluded.png",
+      croppedX: 425,
+      croppedY: 165,
+      croppedWidth: 112,
+      croppedHeight: 50,
+      matchThreshold: 0.85,
+    },
+  });
 
-  let frames = 0;
-  for await (const frame of poggies.images("INSERTSTREAMKEYHERE")) {
-    if (!frame.frame) continue;
-    frames++;
-    if (!isRealPNG(frame.frame))
-      throw new Error("RECEIVER GOT A BAD FRAME ‼️😵‍💫");
-
-    console.log("Received frame! Processing...");
-    console.log("Saving file...");
-    await fs.writeFile("./videos/frame-" + frames + ".png", frame.frame);
-    const start = Date.now();
-
-    const totalms = Date.now() - start;
-    console.log("Processing completed in ", totalms, "ms!");
-  }
+  const stream = new Stream(poggies, matcher, "INSERTSTREAMKEYHERE");
+  await stream.record();
 }
 
 main().catch((error: unknown) => {
