@@ -17,6 +17,7 @@
     "@types/node": "^25.6.0",
     "@u4/opencv4nodejs": "^7.1.2",
     "node-media-server": "^4.2.4",
+    "opencv-install-env": "file:./opencv-install-env",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
@@ -28,6 +29,6 @@
     }
   },
   "opencv4nodejs": {
-    "disableAutoBuild": true
+    "disableAutoBuild": "1"
   }
 }

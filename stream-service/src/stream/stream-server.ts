@@ -253,7 +253,7 @@ export class StreamServer {
     }
 
     for (const ffmpeg of conn.ffmpegSessions) {
-      if (!(await this.shutdownFfmpeg(ffmpeg, session.id))) {
+      if (!(await this.shutdownFfmpeg(ffmpeg, streamKey))) {
         console.warn(
           "[StreamService] FFMPEG failed to shutdown properly and video may be corrupted! sessionId: ",
           session.id,
